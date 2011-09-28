@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<widgets:widget xmlns:widgets = "http://www.w3.org/ns/widgets"
+        defaultlocale = "en-us">
+
+   <name short="Weather" xml:lang="en-us">
+    The Ultimate Weather Widget
+   </name>
+
+   <name short="Boletim" xml:lang="pt">
+    Boletim Metereológico
+   </name>
+
+</widgets:widget>
