@@ -6,5 +6,10 @@
 	<classpathentry kind="lib" path="/Users/marcosc/Downloads/xerces-2_9_0/serializer.jar"/>
 	<classpathentry kind="lib" path="/Users/marcosc/Downloads/xerces-2_9_0/xercesImpl.jar"/>
 	<classpathentry kind="lib" path="/Users/marcosc/Downloads/xerces-2_9_0/xml-apis.jar" sourcepath="/Users/marcosc/Downloads/xerces-2_9_0"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/Java 1.7"/>
+	<classpathentry kind="lib" path="dependencies/google-gson/gson-1.7.1-javadoc.jar"/>
+	<classpathentry kind="lib" path="dependencies/google-gson/gson-1.7.1-sources.jar"/>
+	<classpathentry kind="lib" path="dependencies/google-gson/gson-1.7.1.jar"/>
+	<classpathentry kind="lib" path="dependencies/css-selectors-1.0.2.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

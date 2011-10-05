@@ -1,75 +1,230 @@
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+
 import org.w3c.dom.*;
-import java.io.File;
+import java.net.URI;
+import java.net.URISyntaxException;
 
 import  org.w3c.dom.bootstrap.DOMImplementationRegistry;
 import  org.w3c.dom.Document;
 import  org.w3c.dom.ls.DOMImplementationLS;
 import  org.w3c.dom.ls.LSParser;
+import java.util.logging.Logger; 
+import java.util.Locale;
+import java.util.Iterator; 
+
+import se.fishtank.css.selectors.*;
+import se.fishtank.css.selectors.dom.DOMNodeSelector;
+
 
 public class ConfigProcessor {
+
 	
-	private static final String space_characters = "\u0020\u0009"; 
+	//@link http://dev.w3.org/2006/waf/widgets/#space-characters
+	private static final String space_characters = "\u000C\u000B\u0020\u0009\n\r";
+	
+	//The Unicode white space characters are code points marked in the [Unicode] 
+	//specification with the property "White_Space", including 
+	//(but not limited to - see [Unicode] for the authoritive list):
+	//@link http://dev.w3.org/2006/waf/widgets/#unicode-white-space-characters
+	private static final String unicode_space_chars = "\u0085\u00A0\u1680\u180E\u2000\u2001\u2002" + 
+													  "\u2003\u2004\u2005\u2006\u2007\u2008" +
+													  "\u2009\u200A\u2028\u2029\u202F\u205F\u3000"; 
+
+	private static final String number_characters = "\u0030\u0031\u0032\u0033\u0034\u0035" +
+			"										 \u0036\u0037\u0038\u0039";
+	
 	private static final String[] dir_indicators = {"ltr","rtl","lro","rlo"}; 
 	
-
-	/**
-	 * @param args 
-	 * @throws IllegalAccessException 
-	 * @throws InstantiationException 
-	 * @throws ClassNotFoundException 
-	 * @throws ClassCastException 
-	 */
-	public static void main(String[] args) throws ClassCastException, ClassNotFoundException, InstantiationException, IllegalAccessException {
-		// TODO Auto-generated method stub
-		ConfigProcessor cp = new ConfigProcessor(); 
-		try {
-			File file = new File("/Users/marcosc/github/widget-config-processor/tests/config.xml");
-			cp.process(file);
-		} catch (DOMException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (InvalidWidgetPackageException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+ 
+	
+	private ConfigurationDefaults defaults = new ConfigurationDefaults(); 
+	private Logger logger =  Logger.getLogger("ConfigParser");
+	
+	public ConfigProcessor(){
+		
 	}
 	
-	
-	public void process(File file) throws DOMException, IOException, InvalidWidgetPackageException, ClassCastException, ClassNotFoundException, InstantiationException, IllegalAccessException{
+	public void setConfigDefault(String name, Object value){
 		
-		//Let doc be the result of loading the widget config doc as a [DOM3Core] 
-		//Document using an [XML] parser that is both [XMLNS]-aware and xml:lang aware.
-		//If doc is not namespace well-formed [XML], 
-		//then the user agent MUST terminate this algorithm and treat this widget 
-		//package as an invalid widget package.
-		Document document;
-		DOMImplementationRegistry registry = DOMImplementationRegistry.newInstance();
-		DOMImplementationLS impl = (DOMImplementationLS)registry.getDOMImplementation("LS");
-		LSParser builder = impl.createLSParser(DOMImplementationLS.MODE_SYNCHRONOUS, null);
-		document = builder.parseURI("tests/config.xml");
+		
+	}
+
+	public ConfigurationDefaults process(Document document, ArrayList<Locale> UAlocales) throws DOMException, IOException, 
+		InvalidWidgetPackageException, ClassCastException, ClassNotFoundException, 
+		InstantiationException, IllegalAccessException{
+		
+		//Set up configuration defaults
+		ConfigurationDefaults defaults = new ConfigurationDefaults(); 
 		
 		//Let root element be the documentElement of doc.
 		Element root = document.getDocumentElement(); 
 		processWidgetElement(root); 
-	
-		NodeList nodes_i = document.getDocumentElement().getChildNodes();
-		for (int i = 0; i < nodes_i.getLength(); i++) {
+		
+		
+		NodeList nodes = document.getDocumentElement().getChildNodes();
+		//If the widget element does not contain any child elements, 
+		//then the user agent MUST terminate this algorithm and go to Step 8.
+		if(nodes.getLength() < 0){
+			//we are going to do lookup using XPath (god help us!)
+
 			
+			//Otherwise, let element list be an empty list.
+			List<Element> elementList = new ArrayList(); 
+			
+			//For each range in the user agent locales, starting from the first and moving to the last:
+			Iterator<Locale> i = UAlocales.iterator(); 	
+			if (i.hasNext() == true) {
+				Locale range = i.next();
+				//If the value of range is not "*", then retaining document order, 
+				if(range.toLanguageTag() != "*"){
+					//let matching elements be the result of applying lookup to the child elements 
+					//that are defined as being localizable via xml:lang that are direct descendents 
+					//of the root element and whose xml:lang attribute matches the current range. 
+					//(name, description, license), 
+		
+					
+					//Append matching elements to the element list.
+				}
+				/*
+				 * 
+
+
+Note:
+In the context of this specification, the above conformance requirement is intended to match the name, description, and license elements. However, it is written in an abstract manner to provide a hook for future specifications that want to define elements that also support being localizable via xml:lang.
+
+If the value of range is "*", retaining document order, let unlocalized elements be all child elements that are direct descendents of the root element that do not have an implicit or explicit xml:lang attribute (i.e., match default content). Append unlocalized elements to the element list.
+For example, consider the following configuration document.
+
+<widget xmlns="http://www.w3.org/ns/widgets">
+<name>El Widget!</name>
+<name xml:lang="fr">Le Widget</name>
+<name xml:lang="en">The Widget</name>
+</widget> 
+For a use agent whose user agent locales contains "en,fr,*", the matching elements would be in the following order:
+
+<name xml:lang="en">The Widget</name>
+<name xml:lang="fr">Le Widget</name>
+<name>El Widget!</name>
+For a use agent whose user agent locales contains "en,*", the matching elements would be in the following order:
+
+<name xml:lang="en">The Widget</name>
+<name>El Widget!</name>
+For a use agent whose user agent locales contains "jp,*", the matching elements would be in the following order:
+
+<name>El Widget!</name>
+For each element in the elements list, if the element is one of the following:
+				 */
+			}
 		}
+		return defaults; 
+	}
+	
+	
+	private void processDefaultLocale(Attr attr){
+		//If the defaultlocale attribute is used, 
+		//then let default locale be the result of 
+		//applying the rule for getting a single attribute value 
+		//to the defaultlocale attribute:
+		String languageTag = getSingleAttrValue(attr).toString();
+		Locale defaultLocale = Locale.forLanguageTag(languageTag); 
+			
+		//TODO: If potential default locale is a valid language tag and the user agent locales does 
+		//not contain the value of default locale, the user agent MUST prepend the value of potential 
+		//default locale into the the user agent locales list as the second-last item (i.e., at position length - 1). 
+	}
 		
 
+	private void processWidgetId(Attr attr){
+		//If the id attribute is used, 
+		//then let id be the result of applying the rule for getting a single 
+		//attribute value to the id attribute. 
+		String id = getSingleAttrValue(attr).toString();  
+		
+		try{
+			//TODO: If id is a valid IRI, then let widget id be the value of the id.
+			URI uri = new URI(id); 
+			
+		}catch(URISyntaxException urie){
+			//If the id is in error,
+			//then the user agent MUST ignore the attribute.
+			logger.warning("The id attribute was not a valid URI. It was ignored by the parser.");
+		}
+		
+	}
+	
+	private void processWidgetVersion(Attr attr){
+		//If the version attribute is used, then let version value be the result of applying the 
+		//rule for getting a single attribute value to the version attribute. 
+		
+		String versionValue = getSingleAttrValue(attr).toString();
+		
+		//If the version is an
+		//empty string, then the user agent MUST ignore the attribute; 
+		if(versionValue.length() > 0){
+			//TODO: otherwise, let widget version be the value of version value.
+			
+		}
+	}
+	
+	
+	private void processWidgetHeight(Attr attr){
+		//If the height attribute is used, then let normalized height be the result of applying the
+		//rule for parsing a non-negative integer to the value of the attribute.
+		try{
+			int normalHeight = parseNonNegInteger(attr.getValue());
+			//If the normalized height is not in error and greater than 0, then let widget height 
+			//be the value of normalized height.
+			if(normalHeight > 0){
+				//TODO: then let widget width be the value of normalized width. 
+			}
+		}catch(Exception e){
+			//If the height attribute is in error, then the user agent MUST ignore the attribute.
+			logger.warning("The height attribute was in error and was not processed. Its value is '"
+					+ attr.getValue() + "'");
+		}
+	}
+	
+	private void processWidgetWidth(Attr attr){
+		//If the width attribute is used, then let normalized width be the result of applying the 
+		//rule for parsing a non-negative integer to the value of the attribute. 
+		try{
+			int normalWidth = parseNonNegInteger(attr.getValue());
+			//If the normalized width is not in error and greater than 0, 
+			if(normalWidth > 0){
+				//TODO: then let widget width be the value of normalized width. 
+			}
+		}catch(Exception e){
+			//If the width attribute is in error, then the user agent MUST ignore the attribute.
+			logger.warning("The width attribute was in error and was not processed. Its value is '"
+					+ attr.getValue() + "'");
+		}
 	}
 	
 	/*
-	 * This method is used to process widget elements
-	 * @param e The wigdet element to be processed 
+	 * 
 	 */
-	public static void processWidgetElement(Element e) throws InvalidWidgetPackageException{
+	private void processWidgetViewmodes(Attr attr){
+		//If the viewmodes attribute is used, then the user agent MUST let viewmodes list be 
+		//the result of applying the rule for getting a list of keywords from an attribute:
+		
+		//From the viewmode list, remove any unsupported items.
+
+		//From the viewmode list, remove any duplicated items from right to left.
+
+		//Let widget window modes be the value of viewmodes list.
+
+	}
+	
+	
+	/*
+	 * This method is used to process widget elements
+	 * @param e The widget element to be processed 
+	 */
+	public void processWidgetElement(Element e) throws InvalidWidgetPackageException{
 		//If the root element is not a widget element in the widget namespace, 
 		if((e.getNamespaceURI() != "http://www.w3.org/ns/widgets") 
 				|| (e.getLocalName() != "widget")) {
@@ -79,15 +234,28 @@ public class ConfigProcessor {
 			System.out.println(e.getNodeName());
 			throw new InvalidWidgetPackageException(msg);
 		}
-		//If the defaultlocale attribute is used, 
-		if(e.hasAttribute("defaultlocale")){
-			//then let default locale be the result of 
-			//applying the rule for getting a single attribute value 
-			//to the defaultlocale attribute:
-			String defaultLocale = getSingleAttrValue(e.getAttributeNode("defaultlocale")); 
-			
-		}
 		
+		//Itearate the attributes of the widget element, and process each one as needed. 
+		//We ignore the ones we don't know
+		NamedNodeMap map = e.getAttributes(); 
+		for (int i = 0; i < map.getLength(); i++) {
+			Attr attr = (Attr) map.item(i); 
+			switch(attr.getName()){
+				case "defaultlocale":
+					processDefaultLocale(attr); 
+					break;
+				case "id":
+					processWidgetId(attr); 
+					break;					
+				case "version": 
+					processWidgetVersion(attr);
+					break; 
+				case "viewmodes": 
+					processWidgetViewmodes(attr);
+					break;
+
+			}
+		}
 		
 	}
 	
@@ -107,9 +275,8 @@ public class ConfigProcessor {
 	/*
 	 * @param attribute the attribute to be processed.
 	 */
-	public static String getSingleAttrValue(Attr attribute){
-		String result; 
-		
+	public static LocalizableString getSingleAttrValue(Attr attribute){
+		LocalizableString result; 
 		//Let value be the value of the attribute to be processed.
 		String value = attribute.getValue();
 
@@ -124,12 +291,12 @@ public class ConfigProcessor {
 		//If the attribute is not a displayable-string attribute, 
 		if(isDisplayStringAttribute(attribute) == false){
 			//then let result be a string that contains the value of value.
-			result = value;  
+			result = new LocalizableString(value);  
 		}else{
 			//Otherwise, if and only if the attribute is a displayable-string attribute:
 			
 			//Let result be a localizable string that contains the value of value.
-			result = value; 
+			result = new LocalizableString(value); 
 
 			//Let element be the element that owns attribute.
 			Element element = attribute.getOwnerElement(); 
@@ -138,11 +305,14 @@ public class ConfigProcessor {
 			String direction = getDirectionality(element);
 			
 			//Associate direction with result.
-
-			//Let lang be the language tag derived from having processed the xml:lang attribute on either element, or in element's ancestor chain as per [XML]. If xml:lang was not used anywhere in the ancestor chain, then let lang be an empty string.
-
+			result.setDir(direction);
+			
+			//Let lang be the language tag derived from having processed the xml:lang attribute on either element, 
+			//or in element's ancestor chain as per [XML]. If xml:lang was not used anywhere in the ancestor chain, then let lang be an empty string.
+			String lang = getXMLLang(element);
+			
 			//Associate lang with result.
-
+			result.setLang(lang);
 			//Return result.
 		}
 		return result; 
@@ -174,7 +344,7 @@ public class ConfigProcessor {
 					return value; 
 				}
 				//if the value does not case-sensitively match one of the valid directional indicators, 
-				//return  "ltr" and terminate this algorithm. 
+				//return "ltr" and terminate this algorithm. 
 				return "ltr"; 	
 			}
 		}
@@ -184,10 +354,10 @@ public class ConfigProcessor {
 			//parent element of element and return the result.
 			return getDirectionality( (Element) element.getParentNode()); 
 		}
-
+		
 		//If element contains a dir attribute, let direction be the result of 
 		//applying the rule for getting a single attribute value to the dir attribute of element:
-		String  direction = getSingleAttrValue(element.getAttributeNode("dir"));
+		String  direction = getSingleAttrValue(element.getAttributeNode("dir")).toString();
 		
 		//If direction case-sensitively matches one of the valid directional indicators, return direction.
 		if(Arrays.asList(dir_indicators).contains(direction)){
@@ -197,77 +367,79 @@ public class ConfigProcessor {
 		return direction;
 	}
 
+	/*
+	 * Method used to work out the language of an Element
+	 */
+	public static String getXMLLang(Element element){
+		  String xmlns = "http://www.w3.org/XML/1998/namespace";
+		  String value = element.getAttributeNS(xmlns,"lang");
+		  //check if we are at the root
+		  if(element == element.getOwnerDocument().getDocumentElement()){
+		      //no xml:lang?
+		      if(!element.hasAttributeNS(xmlns,"lang")){
+		          return "";
+		       }
+		       //we have it, so return it.
+		       return value;
+		   }
+
+		   //this is an element in the tree
+		   if(!element.hasAttributeNS(xmlns,"lang")){
+		       //no xml:lang? recurse upwards
+			    return getXMLLang((Element) element.getParentNode());
+		   }
+		  //we have a value, so return it
+		   return value;
+		}
+	
+	/*
+	 * The rule for parsing a non-negative integer is given in the following algorithm. 
+	 * This algorithm returns the number zero, a positive integer, or an error.
+	 * @param input the string being parsed.
+	 */
+
+	public static int parseNonNegInteger(String input) throws Exception{
+		//Let result have the value 0.
+		int result = 0; 
+		
+		//If the length of input is 0, return an error.
+		if(input.length() == 0){
+			throw new Exception("The number had no length"); 
+		}
+		
+		//Let position be a pointer into input, initially pointing at first character of the string.
+		for(int i = 0; i < input.length(); i++ ){
+			//Let nextchar be the character in input at position.
+			CharSequence nextchar =  Character.toString(input.charAt(i)); 
+			//If the nextchar is one of the space characters, increment position. If position is past the end of input, return an error and terminate this algorithm. Otherwise, go to step 5 in this algorithm.
+			if(space_characters.contains(nextchar)){
+				continue; 
+			}
+			//If the nextchar is not one of U+0030 (0) .. U+0039 (9), then return result.
+			//If the nextchar is one of U+0030 (0) .. U+0039 (9):
+			if(number_characters.contains(nextchar) == true){
+				//Multiply result by ten.
+				result = result * 10; 
+				//Add the value of the nextchar to result.
+				result = Integer.valueOf((String)nextchar);
+				//Increment position.
+				//If position is not past the end of input, go to 5 in this algorithm.
+			}
+		
+		}
+		//Return result.
+		return result; 
+	}
 }
 
 
+
+
+
+
 /*
- * The algorithm to process a configuration document is as follows:
+ *
 
-
-
-
-
-
-If the default locale is in error or an empty string or already contained by the user agent locales list, then the user agent MUST ignore the defaultlocale attribute. 
-
-If potential default locale is a valid language tag and the user agent locales does not contain the value of default locale, the user agent MUST prepend the value of potential default locale into the the user agent locales list as the second-last item (i.e., at position length - 1). 
-
-For example, if the default locale is the value "fr", and the user agent locales contains the values "jp,us,*", then the user agent locales list becomes "jp,us,fr,*".
-
-For example, if the default locale is the value "en", and the user agent locales only contains the value "*", then the user agent locales list becomes "en,*".
-
-For example, if the default locale is the value "en", and the user agent locales already contains the values "en,*", then the user agent would ignore the default locale because it is already contained by the user agent locales list.
-
-If the id attribute is used, then let id be the result of applying the rule for getting a single attribute value to the id attribute. If id is a valid IRI, then let widget id be the value of the id. If the id is in error, then the user agent MUST ignore the attribute.
-
-If the version attribute is used, then let version value be the result of applying the rule for getting a single attribute value to the version attribute. If the version is an empty string, then the user agent MUST ignore the attribute; otherwise, let widget version be the value of version value.
-
-If the height attribute is used, then let normalized height be the result of applying the rule for parsing a non-negative integer to the value of the attribute. If the normalized height is not in error and greater than 0, then let widget height be the value of normalized height. If the height attribute is in error, then the user agent MUST ignore the attribute.
-
-If the width attribute is used, then let normalized width be the result of applying the rule for parsing a non-negative integer to the value of the attribute. If the normalized width is not in error and greater than 0, then let widget width be the value of normalized width. If the width attribute is in error, then the user agent MUST ignore the attribute.
-
-If the viewmodes attribute is used, then the user agent MUST let viewmodes list be the result of applying the rule for getting a list of keywords from an attribute:
-
-From the viewmode list, remove any unsupported items.
-
-From the viewmode list, remove any duplicated items from right to left.
-
-For example, viewmode list with a value of "windowed fullscreen windowed floating fullscreen windowed" would become "windowed fullscreen floating".
-
-Let widget window modes be the value of viewmodes list.
-
-If the widget element does not contain any child elements, then the user agent MUST terminate this algorithm and go to Step 8.
-
-Otherwise, let element list be an empty list.
-
-For each range in the user agent locales, starting from the first and moving to the last:
-
-If the value of range is not "*", then retaining document order, let matching elements be the result of applying lookup to the child elements that are defined as being localizable via xml:lang that are direct descendents of the root element and whose xml:lang attribute matches the current range. Append matching elements to the element list.
-
-Note:
-In the context of this specification, the above conformance requirement is intended to match the name, description, and license elements. However, it is written in an abstract manner to provide a hook for future specifications that want to define elements that also support being localizable via xml:lang.
-
-If the value of range is "*", retaining document order, let unlocalized elements be all child elements that are direct descendents of the root element that do not have an implicit or explicit xml:lang attribute (i.e., match default content). Append unlocalized elements to the element list.
-For example, consider the following configuration document.
-
-<widget xmlns="http://www.w3.org/ns/widgets">
-<name>El Widget!</name>
-<name xml:lang="fr">Le Widget</name>
-<name xml:lang="en">The Widget</name>
-</widget> 
-For a use agent whose user agent locales contains "en,fr,*", the matching elements would be in the following order:
-
-<name xml:lang="en">The Widget</name>
-<name xml:lang="fr">Le Widget</name>
-<name>El Widget!</name>
-For a use agent whose user agent locales contains "en,*", the matching elements would be in the following order:
-
-<name xml:lang="en">The Widget</name>
-<name>El Widget!</name>
-For a use agent whose user agent locales contains "jp,*", the matching elements would be in the following order:
-
-<name>El Widget!</name>
-For each element in the elements list, if the element is one of the following:
 
 A name element:
 If this is not the first name element encountered by the user agent, then the user agent MUST ignore this element. 
