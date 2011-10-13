@@ -69,7 +69,7 @@ public class ConfigProcessor {
 		//If the widget element does not contain any child elements, 
 		//then the user agent MUST terminate this algorithm and go to Step 8.
 		if(nodes.getLength() < 0){
-			//we are going to do lookup using XPath (god help us!)
+			DOMNodeSelector nodeSelector = nodeSelector = new DOMNodeSelector(document);
 
 			
 			//Otherwise, let element list be an empty list.
@@ -85,7 +85,7 @@ public class ConfigProcessor {
 					//that are defined as being localizable via xml:lang that are direct descendents 
 					//of the root element and whose xml:lang attribute matches the current range. 
 					//(name, description, license), 
-		
+					
 					
 					//Append matching elements to the element list.
 				}
