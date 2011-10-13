@@ -1,27 +1,34 @@
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
 
 import org.w3c.dom.*;
 import java.net.URI;
 import java.net.URISyntaxException;
 
-import  org.w3c.dom.bootstrap.DOMImplementationRegistry;
 import  org.w3c.dom.Document;
-import  org.w3c.dom.ls.DOMImplementationLS;
-import  org.w3c.dom.ls.LSParser;
 import java.util.logging.Logger; 
 import java.util.Locale;
 import java.util.Iterator; 
 
 import se.fishtank.css.selectors.*;
 import se.fishtank.css.selectors.dom.DOMNodeSelector;
+import java.util.LinkedHashSet;
+import java.util.HashSet;
 
 
 public class ConfigProcessor {
+	public static void main(String[] args){
+		String[] test = {"a", "c", "a", "d", "a"}; 
+		List<String> a = Arrays.asList(test);
+		//WidgetUserAgent wrt = new WidgetUserAgent(); 
+		Set<String> s = new LinkedHashSet<String>(a);
+		String[] y = s.toArray(new String[0]);
 
+		
+	}
 	
 	//@link http://dev.w3.org/2006/waf/widgets/#space-characters
 	private static final String space_characters = "\u000C\u000B\u0020\u0009\n\r";
@@ -30,12 +37,13 @@ public class ConfigProcessor {
 	//specification with the property "White_Space", including 
 	//(but not limited to - see [Unicode] for the authoritive list):
 	//@link http://dev.w3.org/2006/waf/widgets/#unicode-white-space-characters
-	private static final String unicode_space_chars = "\u0085\u00A0\u1680\u180E\u2000\u2001\u2002" + 
+	public static final char[] unicode_space_chars = (space_characters + 
+													  "\u0085\u00A0\u1680\u180E\u2000\u2001\u2002" + 
 													  "\u2003\u2004\u2005\u2006\u2007\u2008" +
-													  "\u2009\u200A\u2028\u2029\u202F\u205F\u3000"; 
+													  "\u2009\u200A\u2028\u2029\u202F\u205F\u3000").toCharArray(); 
 
 	private static final String number_characters = "\u0030\u0031\u0032\u0033\u0034\u0035" +
-			"										 \u0036\u0037\u0038\u0039";
+												    "\u0036\u0037\u0038\u0039";
 	
 	private static final String[] dir_indicators = {"ltr","rtl","lro","rlo"}; 
 	
@@ -43,6 +51,7 @@ public class ConfigProcessor {
 	
 	private ConfigurationDefaults defaults = new ConfigurationDefaults(); 
 	private Logger logger =  Logger.getLogger("ConfigParser");
+	private Set<String> processedElements = new HashSet<String>();
 	
 	public ConfigProcessor(){
 		
@@ -69,11 +78,11 @@ public class ConfigProcessor {
 		//If the widget element does not contain any child elements, 
 		//then the user agent MUST terminate this algorithm and go to Step 8.
 		if(nodes.getLength() < 0){
-			DOMNodeSelector nodeSelector = nodeSelector = new DOMNodeSelector(document);
+			//we are going to do lookup using XPath (god help us!)
 
 			
 			//Otherwise, let element list be an empty list.
-			List<Element> elementList = new ArrayList(); 
+			List<Element> elementList = new ArrayList<Element>(); 
 			
 			//For each range in the user agent locales, starting from the first and moving to the last:
 			Iterator<Locale> i = UAlocales.iterator(); 	
@@ -85,7 +94,7 @@ public class ConfigProcessor {
 					//that are defined as being localizable via xml:lang that are direct descendents 
 					//of the root element and whose xml:lang attribute matches the current range. 
 					//(name, description, license), 
-					
+		
 					
 					//Append matching elements to the element list.
 				}
@@ -210,13 +219,16 @@ For each element in the elements list, if the element is one of the following:
 	private void processWidgetViewmodes(Attr attr){
 		//If the viewmodes attribute is used, then the user agent MUST let viewmodes list be 
 		//the result of applying the rule for getting a list of keywords from an attribute:
+		ArrayList<String> viewmodes = getKeywordList(attr); 
 		
 		//From the viewmode list, remove any unsupported items.
-
+		//TODO: Define supported view mdoes 
+		
 		//From the viewmode list, remove any duplicated items from right to left.
-
+		Set<String> cleanSet = new LinkedHashSet<String>(viewmodes);
+		
 		//Let widget window modes be the value of viewmodes list.
-
+		//TODO: ConfigurationDefaults.setViewmodes =  Arrays.asList(cleanSet).toString();
 	}
 	
 	
@@ -252,6 +264,12 @@ For each element in the elements list, if the element is one of the following:
 					break; 
 				case "viewmodes": 
 					processWidgetViewmodes(attr);
+					break;
+				case "width": 
+					processWidgetWidth(attr);
+					break;
+				case "height": 
+					processWidgetHeight(attr);
 					break;
 
 			}
@@ -393,6 +411,25 @@ For each element in the elements list, if the element is one of the following:
 		}
 	
 	/*
+	 * The rule for getting a list of keywords from an attribute is given by the following algorithm. 
+	 * The algorithm takes a string as input, and returns a list of strings which can be empty.
+	 */
+	public static ArrayList<String> getKeywordList(Attr attribute) {
+		//Let result be the value of the attribute to be processed.
+		LocalizableString result  = new LocalizableString(attribute.getValue()); 
+		
+		//In result, replace any sequences of unicode space characters (in any order) with a single U+0020 SPACE character.
+		//In result, remove any leading or trailing U+0020 SPACE character.
+		result.normalizeSpaces(); 
+		String newResult = result.toString(); 
+		
+		//In result, split the string at each occurrence of a U+0020 character, removing that U+0020 character in the process.
+		String[] splitResult = newResult.split("\\s"); 
+		//Return result.
+		return (ArrayList<String>) Arrays.asList(splitResult); 
+	}	
+	
+	/*
 	 * The rule for parsing a non-negative integer is given in the following algorithm. 
 	 * This algorithm returns the number zero, a positive integer, or an error.
 	 * @param input the string being parsed.
@@ -430,8 +467,142 @@ For each element in the elements list, if the element is one of the following:
 		//Return result.
 		return result; 
 	}
+	
+	/* 
+	 * A name element:
+	 */
+	public void processNameElement(Element element){
+			 //If this is not the first name element encountered by the user agent, 
+			 //then the user agent MUST ignore this element.
+		 if(processedElements.contains("name") == false){
+			
+			 // If this is the first name element encountered by the user agent, then the user agent MUST:	
+			 //Record that an attempt has been made by the user agent to process a name element.
+			 processedElements.add("name"); 
+			
+			 //Let widget name be the result of applying the rule for getting text
+			 //content with normalized white space to this element.
+			
+			 LocalizableString widgetName =  getTextContentWithNormalizedWhiteSpace(element);
+			 
+			 
+			 //If the short attribute is used, 
+			 NamedNodeMap map = element.getAttributes(); 
+			 for (int i = 0; i < map.getLength(); i++) {
+					Attr attr = (Attr) map.item(i); 
+					switch(attr.getName()){
+						case "short":
+							processWidgetShortName(attr); 
+							break;
+					}
+				}
+			 
+	
+		 }
+	}
+	
+	/*
+	 * A description element:
+	 */
+	public void processDescriptionElement(Element element){
+		//If this is not the first description element encountered by the user agent, then the user agent MUST ignore this element.
+		if(processedElements.contains("description") == false){
+			//If this is the first description element encountered by the user agent, then the user agent MUST: 
+			//Record that an attempt has been made by the user agent to process a description element.
+			processedElements.add("description");
+			//let widget description be the result of applying the rule for getting text content to this element.
+			LocalizableString description = getTextContent(element); 
+			
+			//TODO: Add to Configuration defaults
+		}
+	}
+	
+	
+	private void processWidgetShortName(Attr attr){
+		 //let widget short name be the result of applying the rule for getting a single attribute value 
+		 //to the short attribute.
+		LocalizableString shortName = getSingleAttrValue(attr); 
+		//TODO: set configuration default
+	}
+	
+	/*
+	 * The rule for getting text content with normalized white space 
+	 * is given in the following algorithm. The algorithm always returns 
+	 * a localizableString, which can be empty.
+	 * @param input The Element to be processed.
+	 */
+	private static LocalizableString getTextContentWithNormalizedWhiteSpace(Element input){
+		//Let result be the result of applying the rule for getting text content to input.
+		LocalizableString result = getTextContent(input); 
+		
+		//In result, convert any sequence of one or more Unicode white space characters into a single U+0020 SPACE.
+		//In result, remove any leading or trailing U+0020 SPACE character.
+		result.normalizeSpaces(); 
+		
+		//Return result.
+		return result; 
+	}
+	
+	
+	/*
+	* The rule for getting text content is given in the following algorithm. 
+	* The algorithm always returns a list of localizable strings, which can be empty.
+	* @param input the Element to be processed.
+	*/
+	private static LocalizableString getTextContent(Element input){
+		//Let bidi-text be an empty localizable string
+		LocalizableString bidiText = new LocalizableString(""); 
+		
+		//If input has no child nodes, return an bidi-text and terminate this algorithm.
+		if(input.hasChildNodes()){
+			//Let langStrings be an empty list (it will hold localizable strings)  
+			ArrayList<LocalizableString> langStrings = new ArrayList<LocalizableString>();  
+			
+			//Let lang be the language tag derived from having processed the xml:lang 
+			//attribute on either input, or in input's ancestor chain as per [XML].
+			//If xml:lang was not used anywhere in the ancestor chain, then let lang be an empty 
+			//string.
+			String lang = getXMLLang(input); 
+			
+			//Let direction be the result of applying the rule for determining 
+			//directionality to input.
+			String direction = getDirectionality(input); 
+			
+			//Associate lang and direction with bidi-text.
+			//bidiText.setDir(direction);
+			//bidiText.setLang(lang);
+			
+			//For each child node of input: 
+			NodeList nodes = input.getChildNodes(); 
+			for(int i = 0; i < nodes.getLength(); i++){
+				Node currentNode = nodes.item(i); 
+				LocalizableString lstring; 
+ 				//If the current child node is an Element,
+				if(currentNode.getNodeType() == Node.ELEMENT_NODE){
+					//let lstring be the result of recursively applying the rule for 
+					//getting text content using this current child element as the argument.
+					lstring = getTextContent((Element) currentNode); 
+				}else					//If the current child node is a text node,
+					if(currentNode.getNodeType() == Node.TEXT_NODE){
+					  //Then create a new localizable string called lstring, 
+					  //using the text content of this node as the value,
+					  //direction as the direction, and lang as the language
+					  lstring = new LocalizableString(currentNode.getTextContent());
+					  lstring.setDir(direction);
+					  lstring.setLang(lang);
+				}else{
+					continue; 
+				}
+				//append lstring to langString list
+				langStrings.add(lstring);
+			}
+			bidiText.setTextNodes(langStrings); 
+			
+		}	
+		//return bidi-text.
+		return bidiText; 
+	}
 }
-
 
 
 
@@ -439,28 +610,6 @@ For each element in the elements list, if the element is one of the following:
 
 /*
  *
-
-
-A name element:
-If this is not the first name element encountered by the user agent, then the user agent MUST ignore this element. 
-
-If this is the first name element encountered by the user agent, then the user agent MUST:
-
-Record that an attempt has been made by the user agent to process a name element.
-
-Let widget name be the result of applying the rule for getting text content with normalized white space to this element.
-
-If the short attribute is used, then let widget short name be the result of applying the rule for getting a single attribute value to the short attribute.
-
-A description element:
-If this is not the first description element encountered by the user agent, then the user agent MUST ignore this element.
-
-If this is the first description element encountered by the user agent, then the user agent MUST: 
-
-Record that an attempt has been made by the user agent to process a description element.
-
-let widget description be the result of applying the rule for getting text content to this element.
-
 A license element:
 If this is not the first license element encountered by the user agent, then the user agent MUST ignore this element.
 

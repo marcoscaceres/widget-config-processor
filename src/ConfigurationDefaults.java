@@ -1,6 +1,5 @@
 import java.io.File;
 import java.net.URI;
-import java.net.URL;
 import java.util.HashMap;
 
 import org.w3c.dom.Document;

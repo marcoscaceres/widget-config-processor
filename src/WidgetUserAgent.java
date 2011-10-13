@@ -59,7 +59,7 @@ public class WidgetUserAgent{
 	
 	
 	public static void main(String[] args){
-		WidgetUserAgent wrt = new WidgetUserAgent(); 
+		//WidgetUserAgent wrt = new WidgetUserAgent(); 
 		
 	}
 	
