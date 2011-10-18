@@ -20,16 +20,6 @@ import java.util.HashSet;
 
 
 public class ConfigProcessor {
-	public static void main(String[] args){
-		String[] test = {"a", "c", "a", "d", "a"}; 
-		List<String> a = Arrays.asList(test);
-		//WidgetUserAgent wrt = new WidgetUserAgent(); 
-		Set<String> s = new LinkedHashSet<String>(a);
-		String[] y = s.toArray(new String[0]);
-
-		
-	}
-	
 	//@link http://dev.w3.org/2006/waf/widgets/#space-characters
 	private static final String space_characters = "\u000C\u000B\u0020\u0009\n\r";
 	
@@ -501,6 +491,39 @@ For each element in the elements list, if the element is one of the following:
 		 }
 	}
 	
+	
+	
+	/*
+	 * An icon element:
+	 * 
+	 */
+	public void processIconElement(Element element){
+		//If the src attribute of this icon element is absent, then the user agent MUST ignore this element.
+		if(element.hasAttribute("src")){
+			//Let path be the result of applying the rule for getting a single attribute value to 
+			//the src attribute of this icon element. If path is not a valid path or is an empty 
+			//string, then the user agent MUST ignore this element. 
+			String path = getSingleAttrValue(element.getAttributeNode("src")); 
+			
+			//Let file be the result of applying the rule for finding a file within a widget package 
+			//to path. 
+			
+			//If file is not a processable file, as determined by applying the rule for 
+			//identifying the media type of a file, or already exists in the icons list, 
+			//then the user agent MUST ignore this element. 
+	
+			//Otherwise,
+	
+			//If the height attribute is used, then let potential height be the result of applying the rule for parsing a non-negative integer to the attribute's value. If the potential height is not in error and greater than 0, then associate the potential height with file. Otherwise, the height attribute is in error and the user agent MUST ignore the attribute.
+	
+			//If the width attribute is used, then let potential width be the result of applying the rule for parsing a non-negative integer to the attribute's value. If the potential width is not in error and greater than 0, then associate the potential width with file. Otherwise, the width attribute is in error and the user agent MUST ignore the attribute.
+	
+			//Add file and any associated potential width and/or potential height to the list of icons.
+		}
+		
+	}
+	
+	
 	/*
 	 * A description element:
 	 */
@@ -602,6 +625,59 @@ For each element in the elements list, if the element is one of the following:
 		//return bidi-text.
 		return bidiText; 
 	}
+	
+	/*
+	 * Rule for Finding a File Within a Widget Package
+
+The rule for finding a file within a widget package is given in the following algorithm. The algorithm returns either a processable file, null, or an error.
+
+For the sake of comparison and matching, it is RECOMMENDED that a user agent treat all Zip relative paths as [UTF-8].
+
+Note:
+This specification does not define how links in documents other than the configuration document are to be dereferenced. For handling links in other documents, such as (X)HTML, CSS, SVG, etc., please refer to the [Widgets-URI] specification.
+
+Let path be the path to the file entry being sought by the user agent.
+
+If path is not a valid path, return an error and terminate this algorithm.
+
+If the path starts with a U+002F SOLIDUS (e.g., "/style/master.css"), then remove the first U+002F SOLIDUS from path.
+
+Let path-components be the result of splitting path at each occurrence of a U+002F SOLIDUS character, removing that U+002F SOLIDUS character in the process.
+
+if the first item in path-components case-sensitively matches the string "locales", then:
+
+If the path-components does not contain a second item, then return null.
+
+If the second item in path-components is not a valid language-range, then return null and terminate this algorithm.
+
+Otherwise, continue.
+
+For each lang-range in the user agent locales:
+
+Let path be the concatenation of the string "locales/", the lang-range, a U+002F SOLIDUS character, and the path (e.g., locales/en-us/cats.png, where "en-us" is the lang-range and "cats.png" is the path).
+
+If path case-sensitively matches the file name field of a file entry within the widget package that is a folder, then return an error and terminate this algorithm.
+
+If path case-sensitively matches the file name field of a file entry within the widget package that is a file, let file be the result of applying the rule for extracting file data from a file entry to path.
+
+If file is a processable file, then return file and terminate this algorithm.
+
+If the path points to a file entry that is not a processable file, then return an error and terminate this algorithm.
+
+If every lang-range in the user agent locales have been searched, then search for a file entry whose file name field matches path from the root of the widget package:
+
+If path points to a file entry within the widget package that is a folder, then return an error and terminate this algorithm.
+
+If path points to a file entry within the widget package that is a file, let file be the result of applying the rule for extracting file data from a file entry to path.
+
+If file is a processable file, then return file and terminate this algorithm.
+
+If the path points to a file entry that is not a processable file, then return an error and terminate this algorithm.
+
+Otherwise, return null.
+
+
+	 */
 }
 
 
@@ -631,20 +707,7 @@ If file is not a processable file, as determined by applying the rule for identi
 
 Otherwise, let widget license file be the value of file.
 
-An icon element:
-If the src attribute of this icon element is absent, then the user agent MUST ignore this element.
 
-Let path be the result of applying the rule for getting a single attribute value to the src attribute of this icon element. If path is not a valid path or is an empty string, then the user agent MUST ignore this element. 
-
-Let file be the result of applying the rule for finding a file within a widget package to path. If file is not a processable file, as determined by applying the rule for identifying the media type of a file, or already exists in the icons list, then the user agent MUST ignore this element. 
-
-Otherwise,
-
-If the height attribute is used, then let potential height be the result of applying the rule for parsing a non-negative integer to the attribute's value. If the potential height is not in error and greater than 0, then associate the potential height with file. Otherwise, the height attribute is in error and the user agent MUST ignore the attribute.
-
-If the width attribute is used, then let potential width be the result of applying the rule for parsing a non-negative integer to the attribute's value. If the potential width is not in error and greater than 0, then associate the potential width with file. Otherwise, the width attribute is in error and the user agent MUST ignore the attribute.
-
-Add file and any associated potential width and/or potential height to the list of icons.
 
 An author element:
 If this is not the first author element encountered by the user agent, then the user agent MUST ignore this element.
@@ -661,28 +724,7 @@ If the email attribute is used, then let author email be the result of applying 
 
 Let author name be the result of applying the rule for getting text content with normalized white space to this element.
 
-A preference element:
-If a value attribute of the preference element is used, but the name attribute is absent, then this preference element is in error and the user agent MUST ignore this element. Otherwise, the user agent MUST: 
 
-Let name be the result of applying the rule for getting a single attribute value to the name attribute.
-
-If the name is an empty string, then this element is in error; ignore this element.
-
-If widget preferences already contains a preference whose name case-sensitively matches the value of name, then this element is in error; ignore this element.
-
-If name was not in error, let preference be an empty object.
-
-Associate name with preference.
-
-Let value be the result of applying the rule for getting a single attribute value to the value attribute.
-
-Associate value with preference.
-
-If a readonly attribute is used, then let readonly be the result of applying the rule for getting a single attribute value to the readonly attribute. If readonly is not a valid boolean value, then let the value of readonly be the value 'false'.
-
-Associate readonly with the preference.
-
-Add the preference and the associated name, value and readonly variables the list of widget preferences.
 
 A content element:
 If this is not the first content element encountered by the user agent, then the user agent MUST ignore this element.
