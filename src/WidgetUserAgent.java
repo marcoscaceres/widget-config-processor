@@ -5,7 +5,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 
-
 /*
  * A Widget User Agent that conforms to the W3C Widget packaging and configuration specification.
  * 
@@ -26,6 +25,9 @@ public class WidgetUserAgent{
 	private Widget[] widgets; 
 	
 	private List<String> supportedViewmodes = new ArrayList<String>(); 
+	
+	private List<String> supportedFeatures  = new ArrayList<String>(); 
+	
 	
 	private ConfigProcessor processor = new ConfigProcessor(); 
 	
@@ -55,6 +57,10 @@ public class WidgetUserAgent{
 	
 	public boolean isViewModeSupported(String view){
 		return supportedViewmodes.contains(view);
+	}
+	
+	public boolean isFeatureSupported(String featureName){
+		return supportedFeatures.contains(featureName);
 	}
 	
 	

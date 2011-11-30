@@ -51,6 +51,30 @@ public class ConfigProcessor {
 		
 		
 	}
+	
+	private class Feature{
+		
+		private class Option{
+			private String name; 
+			private String value; 
+			
+			public Option(String name, String value){
+				this.name  = name; 
+				this.value = value;  
+			}
+		}
+		
+		private ArrayList<Option> options;
+		private String name; 
+		
+		public Feature(String name){
+			this.name = name;
+		}
+		
+		public vaid addOption(String name, String value){
+			Option o = new Option(name, value);
+		}
+	}
 
 	public ConfigurationDefaults process(Document document, ArrayList<Locale> UAlocales) throws DOMException, IOException, 
 		InvalidWidgetPackageException, ClassCastException, ClassNotFoundException, 
@@ -230,7 +254,7 @@ For each element in the elements list, if the element is one of the following:
 		//If the root element is not a widget element in the widget namespace, 
 		if((e.getNamespaceURI() != "http://www.w3.org/ns/widgets") 
 				|| (e.getLocalName() != "widget")) {
-			   //then the user agent MUST terminate this algorithm and treat this widget package as an invalid widget package.
+			//then the user agent MUST terminate this algorithm and treat this widget package as an invalid widget package.
 			String msg = "The root element is not a widget element in the widget namespace.";
 			System.out.println(e.getNamespaceURI());
 			System.out.println(e.getNodeName());
@@ -248,7 +272,7 @@ For each element in the elements list, if the element is one of the following:
 					break;
 				case "id":
 					processWidgetId(attr); 
-					break;					
+					break;
 				case "version": 
 					processWidgetVersion(attr);
 					break; 
@@ -261,7 +285,6 @@ For each element in the elements list, if the element is one of the following:
 				case "height": 
 					processWidgetHeight(attr);
 					break;
-
 			}
 		}
 		
@@ -394,7 +417,7 @@ For each element in the elements list, if the element is one of the following:
 		   //this is an element in the tree
 		   if(!element.hasAttributeNS(xmlns,"lang")){
 		       //no xml:lang? recurse upwards
-			    return getXMLLang((Element) element.getParentNode());
+			   return getXMLLang((Element) element.getParentNode());
 		   }
 		  //we have a value, so return it
 		   return value;
@@ -458,6 +481,15 @@ For each element in the elements list, if the element is one of the following:
 		return result; 
 	}
 	
+	/*
+	 * A param element:
+	 */
+	public void processParamElement(){
+		//If this param element is not a direct child of a feature element, 
+		//then the user agent MUST ignore this param element.
+		
+	}
+	
 	/* 
 	 * A name element:
 	 */
@@ -490,8 +522,6 @@ For each element in the elements list, if the element is one of the following:
 	
 		 }
 	}
-	
-	
 	
 	/*
 	 * An icon element:
@@ -625,6 +655,85 @@ For each element in the elements list, if the element is one of the following:
 		//return bidi-text.
 		return bidiText; 
 	}
+	
+	/*
+	 * A feature element:
+	 * The user agent MUST process a feature element in the following manner:
+	 */
+	private void processFeatureElement(Element e){
+		// If the name attribute of this feature element is absent, 
+		//then the user agent MUST ignore this element.
+		if(e.hasAttribute("name")){
+			boolean requiredFeature = true; 
+			
+			//If a required attribute is used, 
+			if(e.hasAttribute("required")){
+				//then let potentialy-required-feature be the 
+				//result of applying the rule for getting 
+				//a single attribute value to the required attribute. 
+				String potentiallyRequiredFeature = getSingleAttrValue("required");
+				
+				//If the value of potentialy-required-feature is 
+				//the value "false", 
+				if(potentiallyRequiredFeature == "false"){
+					//then let required-feature be the value 'false'. 
+					requiredFeature = false; 
+				}
+			}
+
+			//Let feature-name be the result of applying the rule for 
+			//getting a single attribute value to the value of the name 
+			//attribute.
+			String featureName = getSingleAttrValue("name"); 
+			//Note:
+			//This specification allows feature elements with the same 
+			//name attribute value to be declared more than once. 
+			//Handling of duplicate feature requests is left up to 
+			//the implementation or the specification that 
+			//defines the feature.
+			
+			//If feature-name is not a valid IRI, and required-feature is 
+			//true, then the user agent MUST treat this widget as 
+			//an invalid widget package.
+			try{
+				URI featureName = new URI(featureName); 
+			}catch(Exception exception){
+				//If feature-name is not a valid IRI, 
+				//and required-feature is false, 
+				//then the user agent MUST ignore this element.
+				return; 
+			}
+			
+			//TODO: If feature-name is not supported by the user agent, 
+			//and required-feature is true, then the user agent MUST treat 
+			//this widget as an invalid widget package.
+			if(UserAgent.isFeatureSupported(featureName)){
+				
+				
+			} 
+			//TODO: 	If feature-name is not supported by the user 
+			//agent, and required-feature is false, then the user agent 
+			//MUST ignore this element.
+			//Associate the value of required-feature with feature-name.
+			
+			//If the feature element contains any param elements as direct descendants, then, for each child param element that is a direct descendent of this feature element, starting from the first moving to the last in document order:
+			
+			//If a value attribute is used, but the name attribute is absent, then this param element is in error and the user agent MUST ignore this element.
+			
+			//If a name attribute is used, but the value attribute is absent, then this param element is in error and the user agent MUST ignore this element.
+			
+			//Let param-name be the result of applying the rule for getting a single attribute value to the name attribute. If the param-name is an empty string, then this param element is in error and the user agent MUST ignore this element. 
+			
+			//If, and only if, param-name is not in error or an empty string, then let param-value be the result of applying the rule for getting a single attribute value to the value attribute.
+			
+			//Associate param-name and param-value with feature-name.
+			
+			//Append feature-name, and any associated required-feature, and associated parameters, to the feature list.
+
+
+		}
+	}
+	
 	
 	/*
 	 * Rule for Finding a File Within a Widget Package
@@ -762,47 +871,10 @@ In the following example the user agent would set the start file encoding to Win
   <content src  = "start.php" 
            type = "text/html;charset=Windows-1252"/>
 </widget>
-A param element:
-If this param element is not a direct child of a feature element, then the user agent MUST ignore this param element.
 
 Note:
 How a param element is to be processed when it is inside a feature element is defined below.
 
-A feature element:
-The user agent MUST process a feature element in the following manner: 
-
-If the name attribute of this feature element is absent, then the user agent MUST ignore this element.
-
-Let feature-name be the result of applying the rule for getting a single attribute value to the value of the name attribute.
-
-Note:
-This specification allows feature elements with the same name attribute value to be declared more than once. Handling of duplicate feature requests is left up to the implementation or the specification that defines the feature.
-
-If a required attribute is used, then let required-feature be the result of applying the rule for getting a single attribute value to the required attribute. If the required attribute is not used or if required-feature is not a valid boolean value, then let the value of required-feature be the value 'true'.
-
-If feature-name is not a valid IRI, and required-feature is true, then the user agent MUST treat this widget as an invalid widget package. 
-
-If feature-name is not a valid IRI, and required-feature is false, then the user agent MUST ignore this element. 
-
-If feature-name is not supported by the user agent, and required-feature is true, then the user agent MUST treat this widget as an invalid widget package.
-
-If feature-name is not supported by the user agent, and required-feature is false, then the user agent MUST ignore this element.
-
-Associate the value of required-feature with feature-name.
-
-If the feature element contains any param elements as direct descendants, then, for each child param element that is a direct descendent of this feature element, starting from the first moving to the last in document order:
-
-If a value attribute is used, but the name attribute is absent, then this param element is in error and the user agent MUST ignore this element.
-
-If a name attribute is used, but the value attribute is absent, then this param element is in error and the user agent MUST ignore this element.
-
-Let param-name be the result of applying the rule for getting a single attribute value to the name attribute. If the param-name is an empty string, then this param element is in error and the user agent MUST ignore this element. 
-
-If, and only if, param-name is not in error or an empty string, then let param-value be the result of applying the rule for getting a single attribute value to the value attribute.
-
-Associate param-name and param-value with feature-name.
-
-Append feature-name, and any associated required-feature, and associated parameters, to the feature list.
 
 Any other type of element:
 If the user agent supports the element, then the user agent MUST process it in accordance with whatever specification defines that element (if any). Otherwise, the user agent MUST ignore the element.
